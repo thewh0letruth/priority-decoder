@@ -1,21 +1,308 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Priority Decoder</title>
+
+  <!-- iOS Home Screen App -->
+  <link rel="apple-touch-icon" href="priority_decoder_icon_1024.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
+  <!-- iPhone 16 Pro Splash (393×852 @3x => 1170×2532) -->
+  <link rel="apple-touch-startup-image"
+        href="priority_decoder_splash_1170x2532.png"
+        media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3)">
+
+  <style>
+    :root{
+      --bg:#0b1020;
+      --card:#121a33;
+      --line:rgba(255,255,255,.12);
+      --text:#f2f5ff;
+      --muted:rgba(242,245,255,.72);
+      --accent:#6ae4ff;
+      --good:#5dffb5;
+      --warn:#ffd36a;
+      --bad:#ff6a8b;
+      --radius:18px;
+    }
+    *{ box-sizing:border-box; }
+    body{
+      margin:0;
+      font-family: system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
+      background: radial-gradient(1200px 700px at 20% 0%, #1a2a66 0%, var(--bg) 55%) fixed;
+      color:var(--text);
+      min-height:100vh;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding:18px;
+    }
+    .wrap{ width:min(760px,100%); }
+    .card{
+      border:1px solid var(--line);
+      border-radius:var(--radius);
+      background: linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.03));
+      box-shadow: 0 18px 60px rgba(0,0,0,.45);
+      overflow:hidden;
+    }
+    header{
+      padding:18px 18px 14px;
+      border-bottom:1px solid var(--line);
+      display:flex;
+      gap:14px;
+      align-items:flex-start;
+    }
+    .badge{
+      background: rgba(106,228,255,.12);
+      border:1px solid rgba(106,228,255,.25);
+      color: var(--accent);
+      padding:7px 10px;
+      border-radius:999px;
+      font-weight:700;
+      font-size:12px;
+      white-space:nowrap;
+      margin-top:2px;
+      cursor:pointer;
+    }
+    h1{ margin:0; font-size:18px; line-height:1.25; }
+    .sub{ margin:6px 0 0; color:var(--muted); font-size:13px; line-height:1.45; }
+
+    .content{ padding:16px 18px 18px; }
+    .progress{ display:flex; gap:8px; margin:2px 0 14px; }
+    .dot{
+      height:8px; flex:1;
+      background: rgba(255,255,255,.08);
+      border:1px solid var(--line);
+      border-radius:999px;
+      overflow:hidden;
+      position:relative;
+    }
+    .dot > i{
+      position:absolute; inset:0;
+      background: linear-gradient(90deg, rgba(106,228,255,.25), rgba(106,228,255,.65));
+      transform: translateX(-100%);
+      transition: transform .28s ease;
+    }
+    .dot.active > i{ transform: translateX(0); }
+
+    .panel{
+      border:1px solid var(--line);
+      background: rgba(18,26,51,.55);
+      border-radius: var(--radius);
+      padding:14px;
+    }
+    .rowTop{
+      display:flex;
+      gap:10px;
+      align-items:center;
+      justify-content:space-between;
+      flex-wrap:wrap;
+      margin-bottom:10px;
+    }
+    .pill{
+      font-size:12px;
+      color:var(--muted);
+      border:1px solid var(--line);
+      border-radius:999px;
+      padding:6px 10px;
+      background: rgba(255,255,255,.04);
+      white-space:nowrap;
+    }
+    .q{ font-size:15px; font-weight:800; margin:0; }
+    .choices{ display:grid; gap:10px; margin-top:12px; }
+    button{
+      all:unset;
+      cursor:pointer;
+      padding:12px 12px;
+      border-radius:14px;
+      border:1px solid var(--line);
+      background: rgba(255,255,255,.04);
+      transition: transform .06s ease, background .2s ease, border-color .2s ease;
+      display:flex; gap:10px; align-items:flex-start;
+      -webkit-tap-highlight-color: transparent;
+    }
+    button:hover{ background: rgba(255,255,255,.07); border-color: rgba(106,228,255,.25); }
+    button:active{ transform: scale(.995); }
+    .emoji{ width:22px; text-align:center; margin-top:1px; }
+    .btntxt{ display:flex; flex-direction:column; gap:2px; }
+    .btntxt span{ font-weight:900; }
+    .btntxt small{ color:var(--muted); font-size:12px; line-height:1.35; }
+
+    .trail{
+      margin-top:12px;
+      color:var(--muted);
+      font-size:12px;
+      display:flex; flex-wrap:wrap; gap:8px;
+    }
+    .crumb{
+      border:1px solid var(--line);
+      background: rgba(255,255,255,.03);
+      padding:6px 9px;
+      border-radius:999px;
+    }
+
+    .tag{
+      display:inline-flex; align-items:center; gap:8px;
+      padding:7px 10px;
+      border-radius:999px;
+      font-size:12px;
+      font-weight:900;
+      letter-spacing:.2px;
+      border:1px solid var(--line);
+    }
+    .tag.good{ color:#072514; background: rgba(93,255,181,.92); border-color: rgba(93,255,181,.92); }
+    .tag.warn{ color:#2a1d05; background: rgba(255,211,106,.95); border-color: rgba(255,211,106,.95); }
+    .tag.bad{  color:#2a0712; background: rgba(255,106,139,.95); border-color: rgba(255,106,139,.95); }
+    .tag.neutral{ color: var(--accent); background: rgba(106,228,255,.12); border-color: rgba(106,228,255,.25); }
+
+    .actions{ margin-top:10px; display:grid; gap:10px; }
+    .line{
+      padding:10px 12px;
+      border-radius:14px;
+      border:1px dashed rgba(255,255,255,.18);
+      color:rgba(242,245,255,.86);
+      background: rgba(255,255,255,.03);
+      font-size:13px;
+      line-height:1.4;
+    }
+    .rowBtns{
+      display:flex; flex-wrap:wrap; gap:10px;
+      margin-top:14px;
+      justify-content:space-between;
+      align-items:center;
+    }
+    .linkbtn{
+      cursor:pointer;
+      padding:10px 12px;
+      border-radius:14px;
+      border:1px solid rgba(106,228,255,.28);
+      background: rgba(106,228,255,.10);
+      color: var(--accent);
+      font-weight:800;
+      font-size:13px;
+    }
+    .linkbtn:hover{ background: rgba(106,228,255,.14); }
+
+    .footer{
+      margin-top:10px;
+      color:rgba(242,245,255,.55);
+      font-size:12px;
+      display:flex; flex-wrap:wrap; gap:10px;
+      align-items:center; justify-content:space-between;
+    }
+    .quote{ font-style:italic; color:rgba(242,245,255,.70); }
+  </style>
+</head>
+
+<body>
+  <div class="wrap">
+    <div class="card" role="application" aria-label="Priority Decoder">
+      <header>
+        <div class="badge">60-Second Reset</div>
+        <div>
+          <h1>Priority Decoder</h1>
+          <p class="sub">
+            A quick “is this real or just loud?” filter. Calm &gt; urgency. Done &gt; perfect.
+            <br><span style="opacity:.85">Built with love for Hannah — so home feels like home again.</span>
+          </p>
+        </div>
+      </header>
+
+      <div class="content">
+        <div class="progress" id="progress"></div>
+        <div id="screen"></div>
+
+        <div class="footer">
+          <span class="quote">“Loud ≠ Important. Done &gt; Perfect.”</span>
+          <span>Use this when your brain says “everything is urgent.”</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Hidden Love Note Overlay -->
+  <div id="easterOverlay" style="
+    position:fixed; inset:0; display:none; align-items:center; justify-content:center;
+    background: rgba(0,0,0,.65); z-index:9999; padding:18px;">
+    <div style="
+      width:min(560px,100%); border-radius:18px; padding:16px;
+      border:1px solid rgba(255,255,255,.14);
+      background: linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.04));
+      box-shadow: 0 18px 60px rgba(0,0,0,.5);">
+      <div style="display:flex; justify-content:space-between; gap:12px;">
+        <div>
+          <div style="font-weight:900;">💌 A Note</div>
+          <div style="opacity:.85; font-size:13px; margin-top:6px; line-height:1.45;">
+            Hey love — if you’re seeing this, it means you paused long enough to breathe.
+            I’m proud of you. I’m on your team. Always.
+            <br><br>
+            You’re not behind — you’re carrying a lot.
+            And you don’t have to carry it alone.
+            <br><br>
+            I love you. ❤️
+          </div>
+        </div>
+        <button id="easterClose" class="linkbtn">Close</button>
+      </div>
+    </div>
+  </div>
+
 <script>
-  document.getElementById('start').addEventListener('click', () => {
-    // Non-blocking feedback instead of alert()
-    document.querySelector('p').textContent = "Let’s begin.";
-    document.querySelector('p').style.opacity = "0.85";
-    document.querySelector('p').style.marginTop = "1rem";
+const steps=[{id:"impact_today",q:"Does this affect a resident/owner, safety, money, or a deadline today?",pill:"Reality check",choices:[{label:"Yes, real impact",emoji:"🚨",desc:"Something breaks or blocks someone.",next:"ownership"},{label:"No, it just feels loud",emoji:"📣",desc:"No real consequence today.",next:"seven_day"}]},{id:"seven_day",q:"Will this matter in 7 days?",pill:"Time filter",choices:[{label:"Yes",emoji:"📆",desc:"Important, just not immediate.",next:"ownership"},{label:"No",emoji:"🫧",desc:"Likely noise.",next:"noise_type"}]},{id:"ownership",q:"Is this yours to own end-to-end?",pill:"Scope",choices:[{label:"Yes, mine",emoji:"🧩",desc:"Belongs with me.",next:"perfection"},{label:"Shared / not mine",emoji:"🤝",desc:"Someone else should help.",next:"delegate_style"}]},{id:"perfection",q:"Does this need perfection or completion?",pill:"Energy",choices:[{label:"Completion",emoji:"✅",desc:"Done is enough.",next:"out_do_now"},{label:"Perfection",emoji:"🎭",desc:"High cost.",next:"perfection_guard"}]},{id:"perfection_guard",q:"Is perfection worth the cost today?",pill:"Cost",choices:[{label:"No",emoji:"🛟",desc:"Protect energy.",next:"out_do_now"},{label:"Yes (rare)",emoji:"🎯",desc:"Truly matters.",next:"out_focus_block"}]},{id:"delegate_style",q:"What’s the cleanest move?",pill:"Hand-off",choices:[{label:"Delegate",emoji:"📤",desc:"Assign clearly.",next:"out_delegate"},{label:"Set boundary",emoji:"🧱",desc:"Reset urgency.",next:"out_boundary"}]},{id:"noise_type",q:"What kind of noise is it?",pill:"Name it",choices:[{label:"Optics / politics",emoji:"🎟️",desc:"Looks urgent.",next:"out_schedule"},{label:"Random interruption",emoji:"🪁",desc:"Not aligned.",next:"out_ignore"}]}];
 
-    // Optional: small visual cue
-    const btn = document.getElementById('start');
-    btn.textContent = "Running…";
-    btn.disabled = true;
-    btn.style.opacity = "0.7";
+const outcomes={out_do_now:{tag:{kind:"good",text:"DO NOW (calmly)"},title:"Real priority.",actions:["Do the next small step.","10 minutes, then reassess.","No multitasking."],closer:"You’re handling what matters."},out_focus_block:{tag:{kind:"warn",text:"FOCUS BLOCK"},title:"Protect the time.",actions:["Create a 30–60 min block.","Silence notifications.","Stop when time’s up."],closer:"Perfect is expensive."},out_delegate:{tag:{kind:"good",text:"DELEGATE"},title:"Hand it off.",actions:["Clear what/why/when.","Attach context once.","Then drop it."],closer:"Your energy matters."},out_boundary:{tag:{kind:"warn",text:"BOUNDARY"},title:"Reset urgency.",actions:["Ask what breaks.","Offer two options.","Schedule if needed."],closer:"Stress isn’t transferable."},out_schedule:{tag:{kind:"neutral",text:"SCHEDULE"},title:"Not now.",actions:["Pick a slot.","Define ‘done’.","Move on."],closer:"Decisions create calm."},out_ignore:{tag:{kind:"bad",text:"IGNORE / WAIT"},title:"Noise.",actions:["Pause 24 hours.","Mute if possible.","Re-route later."],closer:"You don’t have to chase pings."}};
 
-    // Re-enable after a beat (simulate next screen / step)
-    setTimeout(() => {
-      btn.textContent = "Start";
-      btn.disabled = false;
-      btn.style.opacity = "1";
-    }, 800);
-  });
+let path=[],currentId=steps[0].id;
+const screen=document.getElementById("screen"),progress=document.getElementById("progress");
+
+function renderProgress(){
+  progress.innerHTML="";
+  const total=5,filled=Math.min(path.length+1,total);
+  for(let i=0;i<total;i++){
+    const d=document.createElement("div");d.className="dot"+(i<filled?" active":"");
+    const iEl=document.createElement("i");d.appendChild(iEl);progress.appendChild(d);
+  }
+}
+function renderQuestion(step){
+  renderProgress();
+  screen.innerHTML=`<div class="panel"><div class="rowTop"><p class="q">${step.q}</p><span class="pill">${step.pill}</span></div>
+  <div class="choices">${step.choices.map(c=>`<button data-next="${c.next}" data-label="${c.label}"><div class="emoji">${c.emoji}</div><div class="btntxt"><span>${c.label}</span><small>${c.desc}</small></div></button>`).join("")}</div>
+  <div class="trail">${path.map(p=>`<span class="crumb">${p}</span>`).join("")||'<span class="crumb">Start</span>'}</div>
+  <div class="rowBtns"><button class="linkbtn" id="restart">Restart</button><button class="linkbtn" id="share">Copy recap</button></div></div>`;
+  screen.querySelectorAll("button[data-next]").forEach(b=>b.onclick=()=>{path.push(b.dataset.label);go(b.dataset.next);});
+  document.getElementById("restart").onclick=reset;
+  document.getElementById("share").onclick=copyRecap;
+}
+function renderOutcome(o){
+  renderProgress();
+  screen.innerHTML=`<div class="panel"><div class="rowTop"><span class="tag ${o.tag.kind}">${o.tag.text}</span><span class="pill">Result</span></div>
+  <p class="q">${o.title}</p><div class="actions">${o.actions.map(a=>`<div class="line">• ${a}</div>`).join("")}</div>
+  <div style="margin-top:10px;font-weight:800">${o.closer}</div>
+  <div class="trail">${path.map(p=>`<span class="crumb">${p}</span>`).join("")}</div>
+  <div class="rowBtns"><button class="linkbtn" id="restart">Run again</button><button class="linkbtn" id="share">Copy recap</button></div></div>`;
+  document.getElementById("restart").onclick=reset;
+  document.getElementById("share").onclick=copyRecap;
+}
+function go(id){ if(outcomes[id]){renderOutcome(outcomes[id]);return;} const s=steps.find(x=>x.id===id); if(s) renderQuestion(s); }
+function reset(){ path=[]; go(steps[0].id); }
+async function copyRecap(){
+  const result=outcomes[currentId]?.tag?.text||"IN PROGRESS";
+  const txt=`Priority Decoder: ${result}\nPath: ${path.join(" → ")}\n\n(Loud ≠ Important. Done > Perfect.)`;
+  try{await navigator.clipboard.writeText(txt);}catch{}
+}
+reset();
+
+/* Easter egg: tap badge 7 times */
+let taps=0,timer=null;
+document.querySelector(".badge").onclick=()=>{
+  taps++; clearTimeout(timer); timer=setTimeout(()=>taps=0,2000);
+  if(taps>=7){taps=0;document.getElementById("easterOverlay").style.display="flex";}
+};
+document.getElementById("easterClose").onclick=()=>document.getElementById("easterOverlay").style.display="none";
+document.getElementById("easterOverlay").onclick=e=>{if(e.target.id==="easterOverlay")e.target.style.display="none";};
 </script>
+</body>
+</html>
