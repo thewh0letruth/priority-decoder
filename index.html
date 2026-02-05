@@ -1,47 +1,21 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Priority Decoder</title>
+<script>
+  document.getElementById('start').addEventListener('click', () => {
+    // Non-blocking feedback instead of alert()
+    document.querySelector('p').textContent = "Let’s begin.";
+    document.querySelector('p').style.opacity = "0.85";
+    document.querySelector('p').style.marginTop = "1rem";
 
-    <!-- App Metadata -->
-    <link rel="apple-touch-icon" href="priority_decoder_icon_1024.png">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <link rel="apple-touch-startup-image" 
-          href="priority_decoder_splash_1170x2532.png" 
-          media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3)">
+    // Optional: small visual cue
+    const btn = document.getElementById('start');
+    btn.textContent = "Running…";
+    btn.disabled = true;
+    btn.style.opacity = "0.7";
 
-    <style>
-        body {
-            background: #1a1a1a;
-            color: #ffffff;
-            font-family: Arial, sans-serif;
-            text-align: center;
-            padding: 2rem;
-        }
-        button {
-            background: #4CAF50;
-            padding: 1rem 2rem;
-            border: none;
-            border-radius: 10px;
-            color: #ffffff;
-            font-size: 1.2rem;
-            cursor: pointer;
-        }
-        button:hover {
-            background: #45a049;
-        }
-    </style>
-</head>
-<body>
-    <h1>Priority Decoder</h1>
-    <p>Classify tasks with clarity and calm.</p>
-    <button id="start">Start</button>
-
-    <script>
-        document.getElementById('start').addEventListener('click', () => alert('App starting...'));
-    </script>
-</body>
-</html>
+    // Re-enable after a beat (simulate next screen / step)
+    setTimeout(() => {
+      btn.textContent = "Start";
+      btn.disabled = false;
+      btn.style.opacity = "1";
+    }, 800);
+  });
+</script>
